@@ -1,0 +1,267 @@
+<div class="form-page">
+  <mat-card class="form-card">
+    <mat-card-header>
+      <div class="header-content">
+        <div class="header-left">
+          <img src="Logo50IES_COVIELLO_chico.jpg" alt="Logo IES Coviello" class="logo" />
+          <div>
+            <mat-card-title>Formulario de Preinscripción</mat-card-title>
+            <mat-card-subtitle>Completá todos los campos para iniciar tu inscripción</mat-card-subtitle>
+          </div>
+        </div>
+        <div class="header-user">
+          <span class="username-label">{{ username }}</span>
+          <button mat-stroked-button color="warn" (click)="logout()">
+            <mat-icon>logout</mat-icon> Salir
+          </button>
+        </div>
+      </div>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (success()) {
+        <div class="success-container">
+          <mat-icon class="success-icon">check_circle</mat-icon>
+          <h2>¡Preinscripción enviada!</h2>
+          <p>
+            Tu solicitud fue recibida correctamente. El equipo de administración revisará
+            tu comprobante de pago y la documentación adjunta. Te notificaremos por email.
+          </p>
+        </div>
+      } @else if (loadingDatos()) {
+        <div class="loading-page">
+          <mat-spinner diameter="40" />
+          <p>Cargando tu información...</p>
+        </div>
+      } @else {
+        <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+          <!-- Sección 1: Datos personales -->
+          <h3 class="section-title">
+            <mat-icon>person</mat-icon> Datos personales
+          </h3>
+          <p class="section-hint">
+            <mat-icon class="hint-icon">lock</mat-icon>
+            Los campos bloqueados se completaron con los datos de tu registro y no pueden modificarse.
+          </p>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="flex-1"
+              matTooltip="Completado con los datos de tu registro" matTooltipPosition="above">
+              <mat-label>Nombre</mat-label>
+              <input matInput formControlName="nombre" />
+              <mat-icon matSuffix class="lock-icon">lock</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="flex-1"
+              matTooltip="Completado con los datos de tu registro" matTooltipPosition="above">
+              <mat-label>Apellido</mat-label>
+              <input matInput formControlName="apellido" />
+              <mat-icon matSuffix class="lock-icon">lock</mat-icon>
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="flex-1"
+              matTooltip="Completado con los datos de tu registro" matTooltipPosition="above">
+              <mat-label>DNI</mat-label>
+              <input matInput formControlName="dni" />
+              <mat-icon matSuffix class="lock-icon">lock</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>Fecha de nacimiento</mat-label>
+              <input matInput type="date" formControlName="fechaNacimiento" />
+              @if (form.get('fechaNacimiento')?.invalid && form.get('fechaNacimiento')?.touched) {
+                <mat-error>Requerido</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <div class="form-row">
+            <mat-form-field appearance="outline" class="flex-1"
+              matTooltip="Completado con los datos de tu registro" matTooltipPosition="above">
+              <mat-label>Email</mat-label>
+              <input matInput formControlName="email" />
+              <mat-icon matSuffix class="lock-icon">lock</mat-icon>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="flex-1">
+              <mat-label>Teléfono</mat-label>
+              <input matInput formControlName="telefono" type="tel" />
+              @if (form.get('telefono')?.invalid && form.get('telefono')?.touched) {
+                <mat-error>Requerido</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Dirección (calle y número)</mat-label>
+            <input matInput formControlName="direccion" />
+            @if (form.get('direccion')?.invalid && form.get('direccion')?.touched) {
+              <mat-error>Requerido</mat-error>
+            }
+          </mat-form-field>
+
+          <!-- Sección 2: Carrera -->
+          <mat-divider class="section-divider" />
+          <h3 class="section-title">
+            <mat-icon>school</mat-icon> Carrera
+          </h3>
+
+          <mat-form-field appearance="outline" class="w-full">
+            <mat-label>Seleccioná tu carrera</mat-label>
+            <mat-select formControlName="carreraId">
+              @for (carrera of carreras(); track carrera.id) {
+                <mat-option [value]="carrera.id">{{ carrera.nombre }}</mat-option>
+              }
+            </mat-select>
+            @if (form.get('carreraId')?.invalid && form.get('carreraId')?.touched) {
+              <mat-error>Seleccioná una carrera</mat-error>
+            }
+          </mat-form-field>
+
+          <!-- Sección 3: Comprobante de pago -->
+          <mat-divider class="section-divider" />
+          <h3 class="section-title">
+            <mat-icon>receipt_long</mat-icon> Comprobante de pago
+          </h3>
+          <p class="section-hint">
+            Subí el comprobante de tu transferencia bancaria. Formatos aceptados: JPG, PNG, PDF.
+          </p>
+
+          <div class="file-row">
+            <button mat-stroked-button type="button" (click)="comprobanteInput.click()">
+              <mat-icon>upload_file</mat-icon> Subir comprobante
+            </button>
+            <span class="file-name" [class.selected]="files['comprobante'].file">
+              {{ files['comprobante'].file?.name || 'Ningún archivo seleccionado' }}
+            </span>
+            <input
+              #comprobanteInput
+              type="file"
+              hidden
+              accept=".jpg,.jpeg,.png,.pdf"
+              (change)="onFileChange($event, 'comprobante')"
+            />
+          </div>
+          @if (files['comprobante'].error) {
+            <div class="file-error">{{ files['comprobante'].error }}</div>
+          }
+
+          <!-- Sección 4: Documentación -->
+          <mat-divider class="section-divider" />
+          <h3 class="section-title">
+            <mat-icon>folder_open</mat-icon> Documentación obligatoria
+          </h3>
+          <p class="section-hint">
+            Subí los siguientes documentos. Imágenes (DNI, foto carnet): JPG o PNG.
+            Título secundario: PDF.
+          </p>
+
+          <div class="file-row">
+            <button mat-stroked-button type="button" (click)="dniFrenteInput.click()">
+              <mat-icon>badge</mat-icon> DNI frente
+            </button>
+            <span class="file-name" [class.selected]="files['dniFente'].file">
+              {{ files['dniFente'].file?.name || 'Ningún archivo seleccionado' }}
+            </span>
+            <input
+              #dniFrenteInput
+              type="file"
+              hidden
+              accept=".jpg,.jpeg,.png"
+              (change)="onFileChange($event, 'dniFente')"
+            />
+          </div>
+          @if (files['dniFente'].error) {
+            <div class="file-error">{{ files['dniFente'].error }}</div>
+          }
+
+          <div class="file-row">
+            <button mat-stroked-button type="button" (click)="dniDorsoInput.click()">
+              <mat-icon>badge</mat-icon> DNI dorso
+            </button>
+            <span class="file-name" [class.selected]="files['dniDorso'].file">
+              {{ files['dniDorso'].file?.name || 'Ningún archivo seleccionado' }}
+            </span>
+            <input
+              #dniDorsoInput
+              type="file"
+              hidden
+              accept=".jpg,.jpeg,.png"
+              (change)="onFileChange($event, 'dniDorso')"
+            />
+          </div>
+          @if (files['dniDorso'].error) {
+            <div class="file-error">{{ files['dniDorso'].error }}</div>
+          }
+
+          <div class="file-row">
+            <button mat-stroked-button type="button" (click)="tituloInput.click()">
+              <mat-icon>description</mat-icon> Título secundario (PDF)
+            </button>
+            <span class="file-name" [class.selected]="files['titulo'].file">
+              {{ files['titulo'].file?.name || 'Ningún archivo seleccionado' }}
+            </span>
+            <input
+              #tituloInput
+              type="file"
+              hidden
+              accept=".pdf"
+              (change)="onFileChange($event, 'titulo')"
+            />
+          </div>
+          @if (files['titulo'].error) {
+            <div class="file-error">{{ files['titulo'].error }}</div>
+          }
+
+          <div class="file-row">
+            <button mat-stroked-button type="button" (click)="fotoCarnetInput.click()">
+              <mat-icon>portrait</mat-icon> Foto carnet (fondo blanco)
+            </button>
+            <span class="file-name" [class.selected]="files['fotoCarnet'].file">
+              {{ files['fotoCarnet'].file?.name || 'Ningún archivo seleccionado' }}
+            </span>
+            <input
+              #fotoCarnetInput
+              type="file"
+              hidden
+              accept=".jpg,.jpeg,.png"
+              (change)="onFileChange($event, 'fotoCarnet')"
+            />
+          </div>
+          @if (files['fotoCarnet'].error) {
+            <div class="file-error">{{ files['fotoCarnet'].error }}</div>
+          }
+
+          <!-- Error general -->
+          @if (error()) {
+            <div class="error-banner">
+              <mat-icon>error</mat-icon>
+              {{ error() }}
+            </div>
+          }
+
+          <!-- Botón submit -->
+          <div class="submit-row">
+            <button
+              mat-raised-button
+              color="primary"
+              type="submit"
+              class="submit-btn"
+              [disabled]="loading()"
+            >
+              @if (loading()) {
+                <mat-spinner diameter="20" />
+              } @else {
+                Enviar preinscripción
+              }
+            </button>
+          </div>
+
+        </form>
+      }
+    </mat-card-content>
+  </mat-card>
+</div>

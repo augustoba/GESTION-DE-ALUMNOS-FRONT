@@ -1,0 +1,388 @@
+<mat-sidenav-container class="sidenav-container">
+
+  <!-- ── Sidenav ────────────────────────────────────── -->
+  <mat-sidenav mode="side" opened class="sidenav">
+    <div class="sidenav-header">
+      <img src="Logo50IES_COVIELLO_chico.jpg" alt="Logo IES Coviello" class="sidenav-logo" />
+      <span class="sidenav-inst">IES Alfredo Coviello</span>
+    </div>
+
+    <mat-divider />
+
+    <mat-nav-list class="nav-list">
+      @for (item of navItems; track item.section) {
+        <mat-list-item
+          [class.active]="activeSection() === item.section"
+          (click)="setSection(item.section)"
+        >
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon>
+          <span matListItemTitle>{{ item.label }}</span>
+        </mat-list-item>
+      }
+    </mat-nav-list>
+
+    <div class="sidenav-footer">
+      <mat-divider />
+      <div class="sidenav-user">
+        @if (fotoCarnetUrl()) {
+          <img [src]="fotoCarnetUrl()!" class="user-avatar" alt="Foto de perfil" />
+        } @else {
+          <mat-icon class="user-avatar-icon">account_circle</mat-icon>
+        }
+        <div class="user-name-text">
+          <span class="user-nombre">{{ perfil()?.nombres }} {{ perfil()?.apellidos }}</span>
+          <span class="user-rol">Alumno</span>
+        </div>
+      </div>
+      <mat-divider />
+      <button mat-button class="logout-btn" (click)="logout()">
+        <mat-icon>logout</mat-icon> Cerrar sesión
+      </button>
+    </div>
+  </mat-sidenav>
+
+  <!-- ── Main content ───────────────────────────────── -->
+  <mat-sidenav-content class="main-content">
+
+    <!-- Top toolbar -->
+    <mat-toolbar class="toolbar">
+      <span class="toolbar-title">
+        @switch (activeSection()) {
+          @case ('inicio')     { Inicio }
+          @case ('materias')   { Mis Materias }
+          @case ('documentos') { Mis Documentos }
+          @case ('perfil')     { Mi Perfil }
+        }
+      </span>
+      <span class="spacer"></span>
+    </mat-toolbar>
+
+    <!-- Content area -->
+    <div class="content-area">
+
+      <!-- ══ INICIO ══════════════════════════════════ -->
+      @if (activeSection() === 'inicio') {
+        <div class="section-inicio">
+          <h2 class="welcome">
+            ¡Bienvenido/a, {{ perfil()?.nombres }}!
+          </h2>
+
+          <!-- Summary cards -->
+          <div class="stats-grid">
+            <mat-card class="stat-card">
+              <mat-card-content>
+                <mat-icon class="stat-icon primary">school</mat-icon>
+                <div class="stat-value">{{ regulares() }}</div>
+                <div class="stat-label">Materias regulares</div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="stat-card warn">
+              <mat-card-content>
+                <mat-icon class="stat-icon warn">cancel</mat-icon>
+                <div class="stat-value">{{ libres() }}</div>
+                <div class="stat-label">Materias libres</div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="stat-card accent">
+              <mat-card-content>
+                <mat-icon class="stat-icon accent">bar_chart</mat-icon>
+                <div class="stat-value">{{ promAsist() | number:'1.0-0' }}%</div>
+                <div class="stat-label">Asistencia promedio</div>
+              </mat-card-content>
+            </mat-card>
+
+            <mat-card class="stat-card success">
+              <mat-card-content>
+                <mat-icon class="stat-icon success">task_alt</mat-icon>
+                <div class="stat-value">{{ docsValidados() }}/{{ documentos().length }}</div>
+                <div class="stat-label">Documentos validados</div>
+              </mat-card-content>
+            </mat-card>
+          </div>
+
+          <!-- Accesos rápidos -->
+          <h3 class="section-subtitle">Accesos rápidos</h3>
+          <div class="quick-access">
+            @for (item of navItems.slice(1); track item.section) {
+              <mat-card class="quick-card" (click)="setSection(item.section)">
+                <mat-card-content>
+                  <mat-icon>{{ item.icon }}</mat-icon>
+                  <span>{{ item.label }}</span>
+                </mat-card-content>
+              </mat-card>
+            }
+          </div>
+        </div>
+      }
+
+      <!-- ══ MATERIAS ════════════════════════════════ -->
+      @if (activeSection() === 'materias') {
+        <div class="section-materias">
+          <p class="demo-notice">
+            <mat-icon>info</mat-icon>
+            Los datos de materias son de ejemplo. Se conectarán al sistema académico cuando esté disponible.
+          </p>
+
+          @for (anio of anios; track anio) {
+            @if (materiasDeAnio(anio); as lista) {
+              @if (lista.length) {
+                <h3 class="año-titulo">{{ anio }}° Año</h3>
+                <div class="materias-grid">
+                  @for (m of lista; track m.nombre) {
+                    <mat-card class="materia-card">
+                      <mat-card-header>
+                        <mat-card-title class="materia-nombre">{{ m.nombre }}</mat-card-title>
+                        <div class="condicion-chip" [class]="'chip-' + m.condicion.toLowerCase()">
+                          {{ m.condicion }}
+                        </div>
+                      </mat-card-header>
+                      <mat-card-content>
+                        <!-- Asistencia -->
+                        <div class="materia-stat">
+                          <span class="stat-name">
+                            <mat-icon>event_available</mat-icon> Asistencia
+                          </span>
+                          <span class="stat-pct" [class.warn-text]="m.asistencia < 75">
+                            {{ m.asistencia }}%
+                          </span>
+                        </div>
+                        <mat-progress-bar
+                          [value]="m.asistencia"
+                          [color]="m.asistencia < 75 ? 'warn' : 'primary'"
+                          class="asist-bar"
+                        />
+
+                        <!-- Promedio -->
+                        @if (m.notas.length) {
+                          <div class="materia-stat top-gap">
+                            <span class="stat-name">
+                              <mat-icon>grade</mat-icon> Promedio
+                            </span>
+                            <span class="stat-pct">
+                              {{ promedio(m.notas) | number:'1.1-1' }}
+                            </span>
+                          </div>
+                          <div class="notas-row">
+                            @for (n of m.notas; track $index) {
+                              <span class="nota-chip" [class.nota-baja]="n < 6">{{ n }}</span>
+                            }
+                          </div>
+                        } @else {
+                          <p class="sin-notas">Sin notas aún</p>
+                        }
+                      </mat-card-content>
+                    </mat-card>
+                  }
+                </div>
+              }
+            }
+          }
+        </div>
+      }
+
+      <!-- ══ DOCUMENTOS ══════════════════════════════ -->
+      @if (activeSection() === 'documentos') {
+        <div class="section-documentos">
+          @if (loadingDocs()) {
+            <div class="loading-center">
+              <mat-spinner diameter="40" />
+            </div>
+          } @else if (!documentos().length) {
+            <div class="empty-state">
+              <mat-icon>folder_off</mat-icon>
+              <p>No hay documentos registrados.</p>
+            </div>
+          } @else {
+            <div class="docs-grid">
+              @for (doc of documentos(); track doc.id) {
+                <mat-card class="doc-card">
+                  <mat-card-content>
+                    <div class="doc-icon-wrap">
+                      <mat-icon class="doc-icon">
+                        {{ doc.contentType?.includes('pdf') ? 'picture_as_pdf' : 'image' }}
+                      </mat-icon>
+                    </div>
+                    <div class="doc-info">
+                      <div class="doc-tipo">{{ labelTipo(doc.tipo) }}</div>
+                      <div class="doc-nombre">{{ doc.nombreArchivo }}</div>
+                    </div>
+                    <div class="doc-estado" [class]="'estado-' + doc.estado.toLowerCase()">
+                      <mat-icon>
+                        {{ doc.estado === 'VALIDADO' ? 'check_circle' :
+                           doc.estado === 'RESUBIR'  ? 'error' : 'hourglass_empty' }}
+                      </mat-icon>
+                      {{ doc.estado === 'VALIDADO' ? 'Validado' :
+                         doc.estado === 'RESUBIR'  ? 'Resubir' : 'Pendiente' }}
+                    </div>
+
+                    <!-- hidden file input for re-upload -->
+                    <input #fileInput type="file" accept="image/*,application/pdf"
+                           class="file-input-hidden"
+                           (change)="onArchivoSeleccionado($event, doc)" />
+
+                    <!-- re-upload button: enabled only when RESUBIR -->
+                    @if (subiendoId() === doc.id) {
+                      <mat-spinner diameter="24" class="upload-spinner" />
+                    } @else {
+                      <button mat-icon-button class="resubir-btn"
+                              [disabled]="doc.estado !== 'RESUBIR'"
+                              (click)="abrirSelectorArchivo(fileInput)"
+                              [title]="doc.estado === 'RESUBIR' ? 'Subir nuevo archivo' :
+                                       doc.estado === 'VALIDADO' ? 'Documento aprobado' : 'En revisión'">
+                        <mat-icon>upload_file</mat-icon>
+                      </button>
+                    }
+
+                    <button mat-icon-button class="ver-btn" (click)="verDocumento(doc)" title="Ver documento">
+                      <mat-icon>visibility</mat-icon>
+                    </button>
+                  </mat-card-content>
+                </mat-card>
+              }
+            </div>
+
+            <!-- Leyenda -->
+            <div class="leyenda">
+              <span class="estado-pendiente"><mat-icon>hourglass_empty</mat-icon> Pendiente de revisión</span>
+              <span class="estado-validado"><mat-icon>check_circle</mat-icon> Aprobado</span>
+              <span class="estado-resubir"><mat-icon>error</mat-icon> Debe resubirse</span>
+            </div>
+          }
+        </div>
+      }
+
+      <!-- ══ PERFIL ══════════════════════════════════ -->
+      @if (activeSection() === 'perfil') {
+        <div class="section-perfil">
+          @if (perfil(); as p) {
+
+            <!-- Encabezado con avatar -->
+            <div class="perfil-hero">
+              <div class="perfil-avatar-wrap">
+                @if (fotoCarnetUrl()) {
+                  <img [src]="fotoCarnetUrl()!" class="perfil-avatar-img" alt="Foto de perfil" />
+                } @else {
+                  <mat-icon class="perfil-avatar-icon">account_circle</mat-icon>
+                }
+              </div>
+              <div class="perfil-hero-info">
+                <h2 class="perfil-nombre">{{ p.nombres }} {{ p.apellidos }}</h2>
+                <span class="perfil-email-hero">{{ p.email }}</span>
+                <span class="estado-validado perfil-estado">
+                  <mat-icon>check_circle</mat-icon> Alumno activo
+                </span>
+              </div>
+            </div>
+
+            <!-- Grid de datos -->
+            <div class="perfil-grid">
+
+              <!-- Card datos personales (solo lectura) -->
+              <mat-card class="perfil-card">
+                <mat-card-header>
+                  <mat-icon mat-card-avatar>person</mat-icon>
+                  <mat-card-title>Datos personales</mat-card-title>
+                </mat-card-header>
+                <mat-divider />
+                <mat-card-content class="perfil-data">
+                  <div class="perfil-field">
+                    <mat-icon>badge</mat-icon>
+                    <div>
+                      <div class="field-label">DNI</div>
+                      <div class="field-value">{{ p.dni || '—' }}</div>
+                    </div>
+                  </div>
+                  @if (p.fechaNac) {
+                    <div class="perfil-field">
+                      <mat-icon>cake</mat-icon>
+                      <div>
+                        <div class="field-label">Fecha de nacimiento</div>
+                        <div class="field-value">{{ p.fechaNac }}</div>
+                      </div>
+                    </div>
+                  }
+                </mat-card-content>
+              </mat-card>
+
+              <!-- Card datos de contacto (editables) -->
+              <mat-card class="perfil-card">
+                <mat-card-header>
+                  <mat-icon mat-card-avatar>contacts</mat-icon>
+                  <mat-card-title>Datos de contacto</mat-card-title>
+                  @if (!editandoPerfil()) {
+                    <button mat-icon-button class="edit-btn" (click)="iniciarEdicion()" title="Editar">
+                      <mat-icon>edit</mat-icon>
+                    </button>
+                  }
+                </mat-card-header>
+                <mat-divider />
+                <mat-card-content class="perfil-data">
+
+                  <!-- Vista -->
+                  @if (!editandoPerfil()) {
+                    <div class="perfil-field">
+                      <mat-icon>email</mat-icon>
+                      <div>
+                        <div class="field-label">Email</div>
+                        <div class="field-value">{{ p.email }}</div>
+                      </div>
+                    </div>
+                    <div class="perfil-field">
+                      <mat-icon>phone</mat-icon>
+                      <div>
+                        <div class="field-label">Teléfono</div>
+                        <div class="field-value">{{ p.telefono || '—' }}</div>
+                      </div>
+                    </div>
+                    <div class="perfil-field">
+                      <mat-icon>home</mat-icon>
+                      <div>
+                        <div class="field-label">Dirección</div>
+                        <div class="field-value">{{ p.direccion || '—' }}</div>
+                      </div>
+                    </div>
+                  }
+
+                  <!-- Edición -->
+                  @if (editandoPerfil()) {
+                    <form [formGroup]="perfilForm" class="perfil-form">
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Teléfono</mat-label>
+                        <mat-icon matPrefix>phone</mat-icon>
+                        <input matInput formControlName="telefono" placeholder="Ej: 3812 000000" />
+                      </mat-form-field>
+                      <mat-form-field appearance="outline" class="full-width">
+                        <mat-label>Dirección</mat-label>
+                        <mat-icon matPrefix>home</mat-icon>
+                        <input matInput formControlName="direccion" placeholder="Calle, número, ciudad" />
+                      </mat-form-field>
+                      <div class="perfil-form-actions">
+                        <button mat-button (click)="cancelarEdicion()" [disabled]="guardandoPerfil()">
+                          Cancelar
+                        </button>
+                        <button mat-flat-button color="primary"
+                                (click)="guardarPerfil()"
+                                [disabled]="guardandoPerfil()">
+                          @if (guardandoPerfil()) {
+                            <mat-spinner diameter="18" />
+                          } @else {
+                            Guardar
+                          }
+                        </button>
+                      </div>
+                    </form>
+                  }
+
+                </mat-card-content>
+              </mat-card>
+
+            </div>
+          }
+        </div>
+      }
+
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>
