@@ -1,0 +1,197 @@
+<mat-sidenav-container class="sidenav-container">
+
+  <!-- ── Sidenav ─────────────────────────────────────── -->
+  <mat-sidenav mode="side" opened class="sidenav">
+    <div class="sidenav-header">
+      <img src="Logo50IES_COVIELLO_chico.jpg" alt="Logo IES Coviello" class="sidenav-logo" />
+      <span class="sidenav-inst">IES Alfredo Coviello</span>
+    </div>
+
+    <mat-divider />
+
+    <mat-nav-list class="nav-list">
+      <mat-list-item (click)="volver()">
+        <mat-icon matListItemIcon>assignment</mat-icon>
+        <span matListItemTitle>Preinscripciones</span>
+      </mat-list-item>
+    </mat-nav-list>
+
+    <div class="sidenav-footer">
+      <mat-divider />
+      <div class="sidenav-user">
+        <mat-icon class="user-avatar-icon">admin_panel_settings</mat-icon>
+        <div class="user-name-text">
+          <span class="user-nombre">Administrador</span>
+          <span class="user-rol">Admin</span>
+        </div>
+      </div>
+      <mat-divider />
+      <button mat-button class="logout-btn" (click)="logout()">
+        <mat-icon>logout</mat-icon> Cerrar sesión
+      </button>
+    </div>
+  </mat-sidenav>
+
+  <!-- ── Main content ────────────────────────────────── -->
+  <mat-sidenav-content class="main-content">
+
+    <mat-toolbar class="toolbar">
+      <button mat-icon-button (click)="volver()" class="back-btn" title="Volver">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <span class="toolbar-title">Revisión de documentos</span>
+      @if (preinscripcion()) {
+        <span class="toolbar-sub">#{{ preinscripcion()!.id }}</span>
+      }
+      <span class="spacer"></span>
+    </mat-toolbar>
+
+    <div class="content-area">
+
+      <!-- Loading -->
+      @if (loading()) {
+        <div class="loading-center">
+          <mat-spinner diameter="48" />
+        </div>
+      }
+
+      @else if (preinscripcion(); as pre) {
+
+        <!-- ── Datos del alumno ───────────────────────── -->
+        <mat-card class="alumno-card">
+          <mat-card-header>
+            <mat-icon mat-card-avatar class="alumno-avatar-icon">person</mat-icon>
+            <mat-card-title>{{ pre.nombre }} {{ pre.apellido }}</mat-card-title>
+            <mat-card-subtitle>{{ pre.carrera ?? 'Sin carrera' }}</mat-card-subtitle>
+          </mat-card-header>
+          <mat-divider />
+          <mat-card-content class="alumno-data">
+            <div class="dato">
+              <mat-icon>badge</mat-icon>
+              <div>
+                <div class="dato-label">DNI</div>
+                <div class="dato-valor">{{ pre.dni }}</div>
+              </div>
+            </div>
+            <div class="dato">
+              <mat-icon>email</mat-icon>
+              <div>
+                <div class="dato-label">Email</div>
+                <div class="dato-valor">{{ pre.email }}</div>
+              </div>
+            </div>
+            @if (pre.telefono) {
+              <div class="dato">
+                <mat-icon>phone</mat-icon>
+                <div>
+                  <div class="dato-label">Teléfono</div>
+                  <div class="dato-valor">{{ pre.telefono }}</div>
+                </div>
+              </div>
+            }
+            <div class="dato">
+              <mat-icon>calendar_today</mat-icon>
+              <div>
+                <div class="dato-label">Inscripto el</div>
+                <div class="dato-valor">{{ pre.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</div>
+              </div>
+            </div>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- ── Comprobante de pago (solo lectura) ─────── -->
+        @for (doc of docsOtros(); track doc.id) {
+          <mat-card class="doc-card readonly-card">
+            <mat-card-content class="doc-row">
+              <div class="doc-icon-wrap">
+                <mat-icon>{{ doc.contentType.includes('pdf') ? 'picture_as_pdf' : 'image' }}</mat-icon>
+              </div>
+              <div class="doc-info">
+                <div class="doc-tipo">{{ labelTipo(doc.tipo) }}</div>
+                <div class="doc-nombre">{{ doc.nombreArchivo }}</div>
+              </div>
+              <span [class]="'estado-badge estado-' + doc.estado.toLowerCase()">
+                <mat-icon>
+                  {{ doc.estado === 'VALIDADO' ? 'check_circle' :
+                     doc.estado === 'RESUBIR'  ? 'cancel'       : 'hourglass_empty' }}
+                </mat-icon>
+                {{ estadoLabelDoc(doc.estado) }}
+              </span>
+              <button mat-icon-button class="ver-btn" (click)="verDocumento(doc)" title="Ver documento">
+                <mat-icon>visibility</mat-icon>
+              </button>
+            </mat-card-content>
+          </mat-card>
+        }
+
+        <!-- ── Documentos obligatorios ───────────────── -->
+        <h3 class="section-title">Documentos a revisar</h3>
+
+        @for (doc of docsObligatorios(); track doc.id) {
+          <mat-card class="doc-card">
+            <mat-card-content class="doc-row">
+
+              <!-- Ícono -->
+              <div class="doc-icon-wrap">
+                <mat-icon>{{ doc.contentType.includes('pdf') ? 'picture_as_pdf' : 'image' }}</mat-icon>
+              </div>
+
+              <!-- Info -->
+              <div class="doc-info">
+                <div class="doc-tipo">{{ labelTipo(doc.tipo) }}</div>
+                <div class="doc-nombre">{{ doc.nombreArchivo }}</div>
+                <span [class]="'estado-badge-sm estado-' + doc.estado.toLowerCase()">
+                  {{ estadoLabelDoc(doc.estado) }}
+                </span>
+              </div>
+
+              <!-- Ver -->
+              <button mat-icon-button class="ver-btn" (click)="verDocumento(doc)" title="Ver documento">
+                <mat-icon>visibility</mat-icon>
+              </button>
+
+              <!-- Decisión -->
+              <mat-button-toggle-group
+                class="decision-toggle"
+                [value]="getDecision(doc.id)"
+                (change)="setDecision(doc.id, $event.value)">
+                <mat-button-toggle value="VALIDADO" class="toggle-validar">
+                  <mat-icon>check_circle</mat-icon>
+                  Validar
+                </mat-button-toggle>
+                <mat-button-toggle value="RESUBIR" class="toggle-rechazar">
+                  <mat-icon>cancel</mat-icon>
+                  Rechazar
+                </mat-button-toggle>
+              </mat-button-toggle-group>
+
+            </mat-card-content>
+          </mat-card>
+        }
+
+        <!-- ── Acción final ───────────────────────────── -->
+        <div class="actions-bar">
+          <p class="actions-hint" [class.hint-ok]="todasDecididas()">
+            @if (todasDecididas()) {
+              <mat-icon>check_circle</mat-icon>
+              Todos los documentos tienen una decisión asignada.
+            } @else {
+              <mat-icon>info</mat-icon>
+              Asigná una decisión a cada documento para poder confirmar.
+            }
+          </p>
+          <button
+            mat-flat-button
+            color="primary"
+            class="btn-confirmar"
+            [disabled]="!todasDecididas() || guardando()"
+            (click)="confirmar()">
+            <mat-icon>{{ guardando() ? 'hourglass_empty' : 'send' }}</mat-icon>
+            {{ guardando() ? 'Guardando...' : 'Aceptar revisión' }}
+          </button>
+        </div>
+
+      }
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>
