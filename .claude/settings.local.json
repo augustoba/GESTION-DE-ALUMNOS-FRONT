@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"education academic institution student management dashboard portal\" --design-system -p \"IES Coviello Gestion Alumnos\")",
+      "Bash(python .claude/skills/ui-ux-pro-max/scripts/search.py \"education university institutional clean professional\" --domain style -n 3)",
+      "Bash(npx ng *)"
+    ]
+  }
+}

@@ -50,7 +50,7 @@ export class LoginComponent {
         console.log('[Login] respuesta backend:', res.data);
         const { rol, status } = res.data;
         if (rol === 'ADMIN') {
-          this.router.navigate(['/preinscripcion']);
+          this.router.navigate(['/admin/lista']);
         } else if (status) {          // truthy: true o 1
           this.router.navigate(['/dashboard']);
         } else {

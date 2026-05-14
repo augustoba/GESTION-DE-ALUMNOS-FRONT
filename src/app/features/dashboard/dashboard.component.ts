@@ -56,7 +56,6 @@ const MATERIAS: Materia[] = [
     MatInputModule,
     ReactiveFormsModule,
     DecimalPipe,
-    ConfirmDialogComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
